@@ -27,7 +27,16 @@ typename pcl::PointCloud<PointT>::Ptr ProcessPointClouds<PointT>::FilterCloud(ty
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
 
-    // TODO:: Fill in the function to do voxel grid point reduction and region based filtering
+    pcl::VoxelGrid<PointT> voxelGrid;
+    voxelGrid.setInputCloud(cloud);
+    voxelGrid.setLeafSize(filterRes, filterRes, filterRes);
+    voxelGrid.filter(*cloud);
+
+    pcl::CropBox<PointT> cropBox;
+    cropBox.setInputCloud(cloud);
+    cropBox.setMin(minPoint);
+    cropBox.setMax(maxPoint);
+    cropBox.filter(*cloud);
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
@@ -35,6 +44,34 @@ typename pcl::PointCloud<PointT>::Ptr ProcessPointClouds<PointT>::FilterCloud(ty
 
     return cloud;
 
+}
+
+template<typename PointT>
+std::pair<typename pcl::PointCloud<PointT>::Ptr, Box> ProcessPointClouds<PointT>::RemoveRegionFromCloud(typename pcl::PointCloud<PointT>::Ptr cloud, Eigen::Vector4f minPoint, Eigen::Vector4f maxPoint)
+{
+    auto startTime = std::chrono::steady_clock::now();
+
+    pcl::CropBox<PointT> cropBox;
+    cropBox.setInputCloud(cloud);
+    cropBox.setMin(minPoint);
+    cropBox.setMax(maxPoint);
+    cropBox.setNegative(true);
+    cropBox.filter(*cloud);
+
+    Box box;
+    box.x_min = minPoint.x();
+    box.y_min = minPoint.y();
+    box.z_min = minPoint.z();
+    box.x_max = maxPoint.x();
+    box.y_max = maxPoint.y();
+    box.z_max = maxPoint.z();
+
+    auto endTime = std::chrono::steady_clock::now();
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    std::cout << "region removal took " << elapsedTime.count() << " milliseconds" << std::endl;
+
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, Box> res(cloud, box);
+    return res;
 }
 
 template<typename PointT>
