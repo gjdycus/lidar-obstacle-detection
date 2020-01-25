@@ -36,7 +36,7 @@ public:
 
     std::pair<typename pcl::PointCloud<PointT>::Ptr, Box> RemoveRegionFromCloud(typename pcl::PointCloud<PointT>::Ptr cloud, Eigen::Vector4f minPoint, Eigen::Vector4f maxPoint);
 
-    std::unordered_set<int> RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, double distanceTol);
+    pcl::PointIndices::Ptr RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, typename pcl::PointIndices::Ptr& inliers, int maxIterations, double distanceTol);
 
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> SeparateClouds(typename pcl::PointIndices::Ptr inliers, typename pcl::PointCloud<PointT>::Ptr cloud);
 

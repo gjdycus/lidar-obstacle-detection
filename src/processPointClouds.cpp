@@ -75,12 +75,11 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, Box> ProcessPointClouds<PointT>
 }
 
 template<typename PointT>
-std::unordered_set<int> ProcessPointClouds<PointT>::RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, double distanceTol)
+pcl::PointIndices::Ptr ProcessPointClouds<PointT>::RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, typename pcl::PointIndices::Ptr& inliers, int maxIterations, double distanceTol)
 {
-	std::unordered_set<int> inliersResult;
 	srand(time(NULL));
 
-	// For max iterations 
+	// For max iterations
 	while (maxIterations--) {
 		// Randomly sample subset and fit line
 		int cloudSize = cloud->size();
@@ -118,7 +117,7 @@ std::unordered_set<int> ProcessPointClouds<PointT>::RansacPlane(typename pcl::Po
 		double D = -(i * x1 + j * y1 + k * z1);
 
 		// Measure distance between every point and fitted line
-		std::unordered_set<int> inliers;
+		pcl::PointIndices::Ptr curInliers (new pcl::PointIndices());
 		for (int index = 0; index < cloud->size(); index++) {
 			PointT point = cloud->points[index];
 
@@ -129,17 +128,17 @@ std::unordered_set<int> ProcessPointClouds<PointT>::RansacPlane(typename pcl::Po
 
 			// If distance is smaller than threshold count it as inlier
 			if (d < distanceTol) {
-				inliers.insert(index);
+				curInliers->indices.push_back(index);
 			}
 		}
-		if (inliers.size() > inliersResult.size()) {
-			inliersResult = inliers;
+		if (curInliers->indices.size() > inliers->indices.size()) {
+			*inliers = *curInliers;
 		}
 	}
 
 	// Return indicies of inliers from fitted line with most inliers
 	
-	return inliersResult;
+	return inliers;
 
 }
 
@@ -181,18 +180,8 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
     
-    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-    pcl::SACSegmentation<PointT> seg;
-    seg.setOptimizeCoefficients(true);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(maxIterations);
-    seg.setDistanceThreshold(distanceThreshold);
-    seg.setInputCloud(cloud);
-    seg.segment(*inliers, *coefficients);
-    
-    // std::unordered_set<int> inliers = RansacPlane(cloud, maxIterations, distanceThreshold);
+    RansacPlane(cloud, inliers, maxIterations, distanceThreshold);
 
     if (inliers->indices.size() == 0) {
         std::cerr << "Unable to estimate planar model for the given dataset." << std::endl;
