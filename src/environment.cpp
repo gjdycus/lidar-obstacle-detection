@@ -71,7 +71,7 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
 void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, ProcessPointClouds<pcl::PointXYZI>* pointProcessorI, const pcl::PointCloud<pcl::PointXYZI>::Ptr& inputCloud)
 {
     // downsample data and restrict to region of interest
-    pointProcessorI->FilterCloud(inputCloud, 0.11, Eigen::Vector4f(-15.0, -5.0, -3.0, 1), Eigen::Vector4f(25.0, 7.0, 5.0, 1));
+    pointProcessorI->FilterCloud(inputCloud, 0.315, Eigen::Vector4f(-15.0, -5.0, -3.0, 1), Eigen::Vector4f(25.0, 7.0, 1.0, 1));
 
     // remove points from roof of ego car
     std::pair<typename pcl::PointCloud<pcl::PointXYZI>::Ptr, Box> removalResult;
@@ -79,13 +79,13 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, ProcessPointCloud
     // renderBox(viewer, removalResult.second, 999);
 
     // separate ground from obstacles
-    std::pair<typename pcl::PointCloud<pcl::PointXYZI>::Ptr, typename pcl::PointCloud<pcl::PointXYZI>::Ptr> segments = pointProcessorI->SegmentPlane(inputCloud, 30, 0.2);
+    std::pair<typename pcl::PointCloud<pcl::PointXYZI>::Ptr, typename pcl::PointCloud<pcl::PointXYZI>::Ptr> segments = pointProcessorI->SegmentPlane(inputCloud, 30, 0.25);
 
     // render ground
     renderPointCloud(viewer, segments.second, "planeCloud");
 
     // cluster obstacles
-    std::vector<typename pcl::PointCloud<pcl::PointXYZI>::Ptr> clusters = pointProcessorI->Clustering(segments.first, 0.43, 25, 2000);
+    std::vector<typename pcl::PointCloud<pcl::PointXYZI>::Ptr> clusters = pointProcessorI->Clustering(segments.first, 0.53, 7, 400);
 
     // loop through and render each cluster
     std::vector<Color> colors = {Color(1,0,0), Color(0,1,0), Color(0,0,1)};
@@ -155,6 +155,6 @@ int main (int argc, char** argv)
         if (streamIterator == stream.end())
             streamIterator = stream.begin();
 
-        viewer->spinOnce (100);
+        viewer->spinOnce (50);
     } 
 }
